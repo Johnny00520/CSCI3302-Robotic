@@ -1,0 +1,85 @@
+#include <Sparki.h> // include the sparki library
+#define START 0
+#define MOVE 1
+#define DROP 2
+
+int state = START;
+
+void setup()
+{
+    sparki.servo(SERVO_CENTER); // Center the Servo
+    sparki.gripperOpen();
+    delay(1000);
+}
+
+void loop()
+{
+    int threshold = 700;
+
+    int cm = sparki.ping();
+  
+    switch(state){
+      case START :
+      {
+        sparki.moveRight(); // measures the distance with Sparki's eyes
+        if(cm < 25 and cm > -1)
+        {
+          sparki.moveForward();
+          if(cm < 3)
+          {
+            sparki.moveStop();
+            sparki.gripperClose();
+            delay(4000);
+            sparki.gripperStop();
+            sparki.moveLeft(180);
+            delay(1500);
+            state = MOVE;
+          }
+        }
+        break;
+      }// close START
+      case MOVE : // line following
+      {
+        int lineLeft   = sparki.lineLeft();   // measure the left IR sensor
+        int lineCenter = sparki.lineCenter(); // measure the center IR sensor
+        int lineRight  = sparki.lineRight();  // measure the right IR sensor
+        
+        if ( lineCenter < threshold ) // if line is below left line sensor
+        {  
+          sparki.moveForward(); // move forward
+        }
+        
+        else if ( lineLeft < threshold ) // if line is below left line sensor
+        {  
+          sparki.moveLeft(); // turn left
+        }
+  
+        else if ( lineRight < threshold ) // if line is below right line sensor
+        {  
+          sparki.moveRight(); // turn right
+        }
+
+        else
+        {
+           sparki.moveForward();
+           break;
+        }
+
+        if ( lineCenter < threshold and lineLeft < threshold and lineRight < threshold)
+        {
+          state = DROP;
+        }
+        
+        break;
+      }
+      
+      case DROP : // Drop the object
+      {
+        sparki.gripperOpen();  // open the robot's gripper
+        sparki.moveStop();
+
+        break;
+      }
+    }
+    delay(100);
+}
